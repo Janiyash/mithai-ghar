@@ -21,12 +21,12 @@ export default function ManageProducts() {
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
+  const [weight, setWeight] = useState(""); // ✅ grams
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
   const [editId, setEditId] = useState(null);
   const [existingImage, setExistingImage] = useState(null);
-
   const [loading, setLoading] = useState(false);
 
   const fetchProducts = async () => {
@@ -49,6 +49,7 @@ export default function ManageProducts() {
   const resetForm = () => {
     setName("");
     setPrice("");
+    setWeight("");
     setImageFile(null);
     setPreview(null);
     setEditId(null);
@@ -56,8 +57,8 @@ export default function ManageProducts() {
   };
 
   const saveProduct = async () => {
-    if (!name || !price) {
-      return toast.error("Name and price are required");
+    if (!name || !price || !weight) {
+      return toast.error("Name, price and weight are required");
     }
 
     try {
@@ -65,7 +66,6 @@ export default function ManageProducts() {
 
       let imageURL = existingImage || null;
 
-      // Upload new image ONLY if selected
       if (imageFile) {
         const imageRef = ref(
           storage,
@@ -75,24 +75,21 @@ export default function ManageProducts() {
         imageURL = await getDownloadURL(imageRef);
       }
 
-      if (editId) {
-        // UPDATE PRODUCT
-        await updateDoc(doc(db, "products", editId), {
-          name,
-          price: Number(price),
-          ...(imageURL && { image: imageURL }),
-        });
+      const data = {
+        name,
+        price: Number(price),
+        weight: Number(weight), // ✅ grams
+        ...(imageURL && { image: imageURL }),
+      };
 
+      if (editId) {
+        await updateDoc(doc(db, "products", editId), data);
         toast.success("Product updated successfully");
       } else {
-        // ADD PRODUCT
         await addDoc(collection(db, "products"), {
-          name,
-          price: Number(price),
-          ...(imageURL && { image: imageURL }),
+          ...data,
           createdAt: serverTimestamp(),
         });
-
         toast.success("Product added successfully");
       }
 
@@ -116,6 +113,7 @@ export default function ManageProducts() {
     setEditId(product.id);
     setName(product.name);
     setPrice(product.price);
+    setWeight(product.weight);
     setExistingImage(product.image || null);
     setPreview(product.image || null);
     setImageFile(null);
@@ -125,7 +123,7 @@ export default function ManageProducts() {
     <div>
       <h1 className="text-2xl font-bold mb-6">Manage Products</h1>
 
-      {/* ADD / EDIT FORM */}
+      {/* FORM */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex gap-4 items-center">
         <input
           className="border rounded px-3 py-2 w-full"
@@ -136,10 +134,18 @@ export default function ManageProducts() {
 
         <input
           className="border rounded px-3 py-2 w-32"
-          placeholder="Price"
+          placeholder="Price (₹)"
           type="number"
           value={price}
           onChange={e => setPrice(e.target.value)}
+        />
+
+        <input
+          className="border rounded px-3 py-2 w-40"
+          placeholder="Weight (grams)"
+          type="number"
+          value={weight}
+          onChange={e => setWeight(e.target.value)}
         />
 
         <input
@@ -158,45 +164,33 @@ export default function ManageProducts() {
         </button>
       </div>
 
-      {/* IMAGE PREVIEW */}
-      {preview && (
-        <div className="mb-6">
-          <p className="text-sm text-gray-500 mb-2">Image Preview</p>
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-32 h-32 object-cover rounded shadow"
-          />
-        </div>
-      )}
-
       {/* TABLE */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full table-fixed">
-          <thead className="bg-primary text-black">
+          <thead>
             <tr>
-              <th className="p-3 text-left w-1/4">Image</th>
-              <th className="p-3 text-left w-1/2">Name</th>
-              <th className="p-3 text-center w-1/6">Price</th>
-              <th className="p-3 text-center w-1/6">Action</th>
+              <th className="p-3 text-left">Image</th>
+              <th className="p-3 text-left">Name</th>
+              <th className="p-3 text-center">Price</th>
+              <th className="p-3 text-center">Weight</th>
+              <th className="p-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
             {products.map(p => (
               <tr key={p.id} className="border-t">
                 <td className="p-3">
-                  {p.image ? (
+                  {p.image && (
                     <img
                       src={p.image}
                       alt={p.name}
                       className="w-16 h-16 object-cover rounded"
                     />
-                  ) : (
-                    <span className="text-gray-400 text-sm">No image</span>
                   )}
                 </td>
                 <td className="p-3">{p.name}</td>
                 <td className="p-3 text-center">₹{p.price}</td>
+                <td className="p-3 text-center">{p.weight} g</td>
                 <td className="p-3 text-center space-x-3">
                   <button
                     onClick={() => editProduct(p)}
@@ -216,7 +210,7 @@ export default function ManageProducts() {
 
             {products.length === 0 && (
               <tr>
-                <td colSpan="4" className="p-4 text-center text-gray-500">
+                <td colSpan="5" className="p-4 text-center text-gray-500">
                   No products found
                 </td>
               </tr>

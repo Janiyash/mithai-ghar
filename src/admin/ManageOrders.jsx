@@ -86,7 +86,7 @@ export default function ManageOrders() {
           <thead className="bg-primary text-black">
             <tr>
               <th className="px-2 py-2 text-left">Items</th>
-              <th className="px-2 py-2 text-left">User</th>
+              <th className="px-2 py-2 text-left">Name</th>
               <th className="px-2 py-2 text-left">Phone</th>
               <th className="px-2 py-2 text-left">Date & Time</th>
               <th className="px-2 py-2 text-center">Total</th>

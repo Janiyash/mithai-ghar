@@ -1,46 +1,79 @@
 import { useCart } from "../context/CartContext";
+import { useAuth } from "../context/AuthContext";
 import toast from "react-hot-toast";
 
 export default function ProductCard({ product }) {
-  const { addToCart } = useCart();
+  const cartContext = useCart();
+  const authContext = useAuth();
 
-  if (!product) return null;
+  // 🛑 HARD SAFETY (prevents blank page)
+  if (!product || !cartContext || !authContext) {
+    return null;
+  }
+
+  const { addToCart } = cartContext;
+  const { user } = authContext;
+
+  const handleAddToCart = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      toast.error("Please login first to order 🛒", {
+        iconTheme: {
+          primary: "#f97316",
+          secondary: "#fff",
+        },
+      });
+      return;
+    }
+
+    addToCart(product);
+  };
 
   return (
-    <div className="bg-white rounded-2xl shadow-md overflow-hidden 
-                    hover:shadow-xl hover:-translate-y-2 transition-all duration-300">
-
+    <div
+      className="
+        bg-white rounded-2xl shadow-md p-6
+        transition-all duration-300 ease-out
+        hover:shadow-xl hover:-translate-y-1 hover:scale-[1.03]
+      "
+    >
       <img
-        src={product.image || "https://via.placeholder.com/300"}
-        alt={product.name || "Product"}
-        className="h-48 w-full object-cover"
+        src={product.image}
+        alt={product.name}
+        className="
+          w-full h-44 object-cover rounded-xl mb-4
+          transition-transform duration-300
+          hover:scale-105
+        "
       />
 
-      <div className="p-4">
-        <h3 className="font-semibold text-lg text-gray-800">
-          {product.name || "Unnamed"}
-        </h3>
+      <h3 className="font-semibold text-lg">{product.name}</h3>
 
-        <p className="text-sm text-gray-500 mt-1">
-          {product.description || "Fresh & delicious"}
-        </p>
+      <p className="text-orange-500 font-bold mt-1 text-lg">
+        ₹{product.price}
+      </p>
 
-        <div className="flex justify-between items-center mt-4">
-          <span className="text-orange-500 font-bold">
-            ₹{product.price || 0}
-          </span>
+      {/* ✅ WEIGHT */}
+      <p className="text-sm text-gray-500 mt-1">
+        Weight:{" "}
+        <span className="font-medium">
+          {product.weight ? `${product.weight} g` : "—"}
+        </span>
+      </p>
 
-          <button
-            onClick={() => {
-              addToCart(product);
-              toast.success("Added to cart");
-            }}
-            className="px-4 py-2 rounded-lg bg-gradient-to-r from-yellow-400 to-orange-500 text-white"
-          >
-            Add
-          </button>
-        </div>
-      </div>
+      <button
+        onClick={handleAddToCart}
+        className="
+          mt-5 w-full py-2.5 rounded-full
+          bg-gradient-to-r from-yellow-400 to-orange-500
+          text-white font-semibold
+          hover:opacity-90 transition
+        "
+      >
+        Add to Cart
+      </button>
     </div>
   );
 }
