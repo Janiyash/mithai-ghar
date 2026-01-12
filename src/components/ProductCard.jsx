@@ -28,7 +28,16 @@ export default function ProductCard({ product }) {
       return;
     }
 
+    // ✅ ADD TO CART
     addToCart(product);
+
+    // ✅ SUCCESS TOAST
+    toast.success("Added to cart 🛒", {
+      iconTheme: {
+        primary: "#22c55e",
+        secondary: "#fff",
+      },
+    });
   };
 
   return (
