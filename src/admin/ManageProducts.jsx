@@ -121,7 +121,7 @@ export default function ManageProducts() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Manage Products</h1>
+      <h1 className="text-2xl font-bold mb-6 text-primary">Manage Products</h1>
 
       {/* FORM */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex gap-4 items-center">
@@ -167,7 +167,7 @@ export default function ManageProducts() {
       {/* TABLE */}
       <div className="bg-white rounded-lg shadow overflow-x-auto">
         <table className="w-full table-fixed">
-          <thead>
+          <thead className="bg-primary text-black">
             <tr>
               <th className="p-3 text-left">Image</th>
               <th className="p-3 text-left">Name</th>
