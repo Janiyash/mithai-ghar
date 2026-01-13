@@ -3,7 +3,13 @@ import { useCart } from "../context/CartContext";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  runTransaction,
+} from "firebase/firestore";
 import emailjs from "emailjs-com";
 
 export default function Checkout() {
@@ -42,27 +48,53 @@ export default function Checkout() {
     let docRef;
 
     try {
-      docRef = await addDoc(collection(db, "orders"), {
-        userId: user.uid,
-        email: user.email,
-        items: cart,
-        total,
-        delivery: {
-          name: form.name,
-          phone: form.phone,
-          address: form.address,
-          time: form.time,
-        },
-        status: "placed",
-        createdAt: serverTimestamp(),
+      // 🔥 TRANSACTION: ORDER + STOCK DECREASE
+      await runTransaction(db, async (transaction) => {
+        // 1️⃣ CHECK & UPDATE STOCK
+        for (const item of cart) {
+          const productRef = doc(db, "products", item.id);
+          const productSnap = await transaction.get(productRef);
+
+          if (!productSnap.exists()) {
+            throw new Error("Product does not exist");
+          }
+
+          const currentQty = productSnap.data().quantity;
+
+          if (currentQty < item.quantity) {
+            throw new Error(
+              `Not enough stock for ${item.name}`
+            );
+          }
+
+          transaction.update(productRef, {
+            quantity: currentQty - item.quantity,
+          });
+        }
+
+        // 2️⃣ CREATE ORDER
+        docRef = await addDoc(collection(db, "orders"), {
+          userId: user.uid,
+          email: user.email,
+          items: cart,
+          total,
+          delivery: {
+            name: form.name,
+            phone: form.phone,
+            address: form.address,
+            time: form.time,
+          },
+          status: "placed",
+          createdAt: serverTimestamp(),
+        });
       });
     } catch (error) {
       console.error("Order error:", error);
-      alert("Failed to place order. Please try again.");
+      alert(error.message || "Failed to place order");
       return;
     }
 
-    // 📧 EMAIL (non-blocking)
+    // 📧 EMAIL (NON-BLOCKING)
     try {
       await emailjs.send(
         "YOUR_SERVICE_ID",
@@ -88,12 +120,12 @@ export default function Checkout() {
       console.error("Email failed:", err);
     }
 
-    // ✅ SHOW SUCCESS FIRST
+    // ✅ SHOW SUCCESS
     setOrderId(docRef.id);
     setShowSuccess(true);
   };
 
-  // ❗ FIX: Only show empty cart screen IF success popup is NOT visible
+  // ❗ EMPTY CART GUARD
   if ((!cart || cart.length === 0) && !showSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -207,7 +239,7 @@ export default function Checkout() {
 
             <button
               onClick={() => {
-                clearCart();        // ✅ clear ONLY when user clicks
+                clearCart();
                 navigate("/");
               }}
               className="bg-red-600 hover:bg-red-700 px-6 py-2 rounded-full font-semibold"

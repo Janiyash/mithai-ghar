@@ -21,7 +21,8 @@ export default function ManageProducts() {
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
-  const [weight, setWeight] = useState(""); // ✅ grams
+  const [weight, setWeight] = useState("");
+  const [quantity, setQuantity] = useState(""); // ✅ NEW
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
@@ -41,7 +42,6 @@ export default function ManageProducts() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     setImageFile(file);
     setPreview(URL.createObjectURL(file));
   };
@@ -50,6 +50,7 @@ export default function ManageProducts() {
     setName("");
     setPrice("");
     setWeight("");
+    setQuantity("");
     setImageFile(null);
     setPreview(null);
     setEditId(null);
@@ -57,8 +58,8 @@ export default function ManageProducts() {
   };
 
   const saveProduct = async () => {
-    if (!name || !price || !weight) {
-      return toast.error("Name, price and weight are required");
+    if (!name || !price || !weight || !quantity) {
+      return toast.error("All fields are required");
     }
 
     try {
@@ -78,7 +79,8 @@ export default function ManageProducts() {
       const data = {
         name,
         price: Number(price),
-        weight: Number(weight), // ✅ grams
+        weight: Number(weight),
+        quantity: Number(quantity), // ✅ NEW
         ...(imageURL && { image: imageURL }),
       };
 
@@ -114,6 +116,7 @@ export default function ManageProducts() {
     setName(product.name);
     setPrice(product.price);
     setWeight(product.weight);
+    setQuantity(product.quantity); // ✅ NEW
     setExistingImage(product.image || null);
     setPreview(product.image || null);
     setImageFile(null);
@@ -125,41 +128,12 @@ export default function ManageProducts() {
 
       {/* FORM */}
       <div className="bg-white p-4 rounded-lg shadow mb-6 flex gap-4 items-center">
-        <input
-          className="border rounded px-3 py-2 w-full"
-          placeholder="Product name"
-          value={name}
-          onChange={e => setName(e.target.value)}
-        />
-
-        <input
-          className="border rounded px-3 py-2 w-32"
-          placeholder="Price (₹)"
-          type="number"
-          value={price}
-          onChange={e => setPrice(e.target.value)}
-        />
-
-        <input
-          className="border rounded px-3 py-2 w-40"
-          placeholder="Weight (grams)"
-          type="number"
-          value={weight}
-          onChange={e => setWeight(e.target.value)}
-        />
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageChange}
-          className="border rounded px-3 py-2"
-        />
-
-        <button
-          onClick={saveProduct}
-          disabled={loading}
-          className="bg-black text-white px-6 py-2 rounded disabled:opacity-50"
-        >
+        <input className="border rounded px-3 py-2 w-full" placeholder="Product name" value={name} onChange={e => setName(e.target.value)} />
+        <input className="border rounded px-3 py-2 w-32" placeholder="Price (₹)" type="number" value={price} onChange={e => setPrice(e.target.value)} />
+        <input className="border rounded px-3 py-2 w-40" placeholder="Weight (grams)" type="number" value={weight} onChange={e => setWeight(e.target.value)} />
+        <input className="border rounded px-3 py-2 w-40" placeholder="Stock Quantity" type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
+        <input type="file" accept="image/*" onChange={handleImageChange} className="border rounded px-3 py-2" />
+        <button onClick={saveProduct} disabled={loading} className="bg-black text-white px-6 py-2 rounded disabled:opacity-50">
           {loading ? "Saving..." : editId ? "Update" : "Add"}
         </button>
       </div>
@@ -173,48 +147,24 @@ export default function ManageProducts() {
               <th className="p-3 text-left">Name</th>
               <th className="p-3 text-center">Price</th>
               <th className="p-3 text-center">Weight</th>
+              <th className="p-3 text-center">Stock</th>
               <th className="p-3 text-center">Action</th>
             </tr>
           </thead>
           <tbody>
             {products.map(p => (
               <tr key={p.id} className="border-t">
-                <td className="p-3">
-                  {p.image && (
-                    <img
-                      src={p.image}
-                      alt={p.name}
-                      className="w-16 h-16 object-cover rounded"
-                    />
-                  )}
-                </td>
+                <td className="p-3">{p.image && <img src={p.image} alt={p.name} className="w-16 h-16 object-cover rounded" />}</td>
                 <td className="p-3">{p.name}</td>
                 <td className="p-3 text-center">₹{p.price}</td>
                 <td className="p-3 text-center">{p.weight} g</td>
+                <td className="p-3 text-center">{p.quantity}</td>
                 <td className="p-3 text-center space-x-3">
-                  <button
-                    onClick={() => editProduct(p)}
-                    className="text-blue-600 hover:underline"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => deleteProduct(p.id)}
-                    className="text-red-600 hover:underline"
-                  >
-                    Delete
-                  </button>
+                  <button onClick={() => editProduct(p)} className="text-blue-600 hover:underline">Edit</button>
+                  <button onClick={() => deleteProduct(p.id)} className="text-red-600 hover:underline">Delete</button>
                 </td>
               </tr>
             ))}
-
-            {products.length === 0 && (
-              <tr>
-                <td colSpan="5" className="p-4 text-center text-gray-500">
-                  No products found
-                </td>
-              </tr>
-            )}
           </tbody>
         </table>
       </div>
