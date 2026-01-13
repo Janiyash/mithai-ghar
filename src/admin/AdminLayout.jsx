@@ -6,15 +6,14 @@ export default function AdminLayout() {
   const { logout } = useAuth();
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      {/* ================= SIDEBAR ================= */}
-      <aside className="w-64 bg-gradient-to-b from-black text-white flex flex-col">
-        
+    <div className="flex h-screen bg-gray-100 overflow-hidden">
+      {/* ================= SIDEBAR (FIXED) ================= */}
+      <aside className="w-64 bg-gradient-to-b from-black text-white flex flex-col fixed inset-y-0 left-0">
+
         {/* LOGO / BRAND */}
         <div className="px-6 py-5 border-b border-gray-800">
           <div className="flex items-center gap-3">
-            {/* Logo */}
-            <div className="w-10 h-10 rounded-full bg-primary  text-white flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold">
               M
             </div>
             <div>
@@ -24,15 +23,15 @@ export default function AdminLayout() {
           </div>
         </div>
 
-        {/* NAV LINKS */}
-        <nav className="flex-1 px-4 py-6 space-y-2">
+        {/* NAV LINKS (SCROLL IF NEEDED) */}
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
           <SidebarLink to="/admin" end label="Dashboard" />
           <SidebarLink to="/admin/users" label="Manage Users" />
           <SidebarLink to="/admin/products" label="Manage Products" />
           <SidebarLink to="/admin/orders" label="Manage Orders" />
         </nav>
 
-        {/* BOTTOM ACTIONS */}
+        {/* BOTTOM ACTIONS (ALWAYS STUCK) */}
         <div className="px-4 py-4 border-t border-gray-800 space-y-2">
           <button
             onClick={() => navigate("/")}
@@ -50,15 +49,15 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* ================= MAIN CONTENT ================= */}
-      <main className="flex-1 p-6 overflow-y-auto">
+      {/* ================= MAIN CONTENT (SCROLLS) ================= */}
+      <main className="flex-1 ml-64 p-6 overflow-y-auto">
         <Outlet />
       </main>
     </div>
   );
 }
 
-/* ================= SIDEBAR LINK COMPONENT ================= */
+/* ================= SIDEBAR LINK ================= */
 function SidebarLink({ to, label, end = false }) {
   return (
     <NavLink
