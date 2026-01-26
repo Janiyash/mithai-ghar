@@ -127,34 +127,93 @@ export default function Navbar() {
       </div>
 
       {/* MOBILE MENU */}
-      {open && (
-        <div className="md:hidden bg-white border-t px-4 py-4 space-y-4">
-          <Link to="/" onClick={() => setOpen(false)}>Home</Link>
-          <Link to="/products" onClick={() => setOpen(false)}>Products</Link>
-          <Link to="/about" onClick={() => setOpen(false)}>About</Link>
-          <Link to="/contact" onClick={() => setOpen(false)}>Contact</Link>
+{/* MOBILE MENU */}
+{open && (
+  <div className="md:hidden bg-white border-t px-6 py-6 space-y-6 text-sm">
 
-          {isAdmin && (
-            <Link to="/admin" onClick={() => setOpen(false)}>
-              Admin Panel
-            </Link>
-          )}
+    {/* NAVIGATION */}
+    <div className="space-y-4">
+      <p className="text-xs text-gray-400 uppercase tracking-wide">
+        Navigation
+      </p>
 
-          <Link to="/cart" onClick={() => setOpen(false)}>
-            🧺 Cart
-          </Link>
+      {["Home", "Products", "About", "Contact"].map((item) => (
+        <Link
+          key={item}
+          to={item === "Home" ? "/" : `/${item.toLowerCase()}`}
+          onClick={() => setOpen(false)}
+          className="block text-gray-700 font-medium hover:text-primary transition"
+        >
+          {item}
+        </Link>
+      ))}
+    </div>
 
-          {!user ? (
-            <Link to="/login" onClick={() => setOpen(false)}>
-              Login
-            </Link>
-          ) : (
-            <button onClick={logout} className="text-red-500">
-              Logout
-            </button>
+    {/* ACTIONS */}
+    {/* ACTIONS */}
+    <div className="space-y-4 pt-4 border-t">
+      <p className="text-xs text-gray-400 uppercase tracking-wide">
+        Actions
+      </p>
+        
+      {/* Cart Button (same as desktop) */}
+      <Link
+        to="/cart"
+        onClick={() => setOpen(false)}
+        className="
+          inline-flex items-center gap-2
+          px-5 py-2 rounded-full
+          border border-gray-300
+          text-sm font-semibold text-gray-800
+          hover:bg-gray-100 transition
+        "
+      >
+        🧺 Cart
+      </Link>
+        
+      {/* Admin Panel Button (same as desktop) */}
+      {isAdmin && (
+        <Link
+          to="/admin"
+          onClick={() => setOpen(false)}
+          className="
+            inline-flex items-center justify-center
+            px-5 py-2 rounded-full
+            bg-black text-white
+            text-sm font-semibold
+            hover:bg-gray-900 transition
+          "
+        >
+          Admin Panel
+        </Link>
+      )}
+    </div>
+
+    {/* ACCOUNT */}
+    <div className="pt-4 border-t">
+      {!user ? (
+        <Link
+          to="/login"
+          onClick={() => setOpen(false)}
+          className="block font-semibold text-primary"
+        >
+          Login
+        </Link>
+      ) : (
+        <button
+          onClick={() => {
+            logout();
+            setOpen(false);
+          }}
+          className="block w-full text-left font-semibold text-red-500 hover:text-red-600 transition"
+        >
+          Logout
+        </button>
+
           )}
         </div>
-      )}
+      </div>
+    )}
     </header>
   );
 }

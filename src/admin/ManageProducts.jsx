@@ -18,11 +18,13 @@ import toast from "react-hot-toast";
 
 export default function ManageProducts() {
   const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState([]); // ✅ NEW
 
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [weight, setWeight] = useState("");
-  const [quantity, setQuantity] = useState(""); // ✅ NEW
+  const [quantity, setQuantity] = useState("");
+  const [category, setCategory] = useState(""); // ✅ NEW
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
 
@@ -35,8 +37,14 @@ export default function ManageProducts() {
     setProducts(snap.docs.map(d => ({ id: d.id, ...d.data() })));
   };
 
+  const fetchCategories = async () => {
+    const snap = await getDocs(collection(db, "categories"));
+    setCategories(snap.docs.map(d => d.data()));
+  };
+
   useEffect(() => {
     fetchProducts();
+    fetchCategories(); // ✅ NEW
   }, []);
 
   const handleImageChange = (e) => {
@@ -51,6 +59,7 @@ export default function ManageProducts() {
     setPrice("");
     setWeight("");
     setQuantity("");
+    setCategory("");
     setImageFile(null);
     setPreview(null);
     setEditId(null);
@@ -58,7 +67,7 @@ export default function ManageProducts() {
   };
 
   const saveProduct = async () => {
-    if (!name || !price || !weight || !quantity) {
+    if (!name || !price || !weight || !quantity || !category) {
       return toast.error("All fields are required");
     }
 
@@ -80,7 +89,8 @@ export default function ManageProducts() {
         name,
         price: Number(price),
         weight: Number(weight),
-        quantity: Number(quantity), // ✅ NEW
+        quantity: Number(quantity),
+        category, // ✅ NEW
         ...(imageURL && { image: imageURL }),
       };
 
@@ -116,7 +126,8 @@ export default function ManageProducts() {
     setName(product.name);
     setPrice(product.price);
     setWeight(product.weight);
-    setQuantity(product.quantity); // ✅ NEW
+    setQuantity(product.quantity);
+    setCategory(product.category); // ✅ NEW
     setExistingImage(product.image || null);
     setPreview(product.image || null);
     setImageFile(null);
@@ -132,7 +143,23 @@ export default function ManageProducts() {
         <input className="border rounded px-3 py-2 w-32" placeholder="Price (₹)" type="number" value={price} onChange={e => setPrice(e.target.value)} />
         <input className="border rounded px-3 py-2 w-40" placeholder="Weight (grams)" type="number" value={weight} onChange={e => setWeight(e.target.value)} />
         <input className="border rounded px-3 py-2 w-40" placeholder="Stock Quantity" type="number" value={quantity} onChange={e => setQuantity(e.target.value)} />
+
+        {/* ✅ CATEGORY DROPDOWN */}
+        <select
+          className="border rounded px-3 py-2 w-40"
+          value={category}
+          onChange={e => setCategory(e.target.value)}
+        >
+          <option value="">Category</option>
+          {categories.map(c => (
+            <option key={c.slug} value={c.slug}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+
         <input type="file" accept="image/*" onChange={handleImageChange} className="border rounded px-3 py-2" />
+
         <button onClick={saveProduct} disabled={loading} className="bg-black text-white px-6 py-2 rounded disabled:opacity-50">
           {loading ? "Saving..." : editId ? "Update" : "Add"}
         </button>

@@ -22,6 +22,7 @@ import AdminDashboard from "./admin/AdminDashboard";
 import ManageUsers from "./admin/ManageUsers";
 import ManageProducts from "./admin/ManageProducts";
 import ManageOrders from "./admin/ManageOrders";
+import ManageCategories from "./admin/ManageCategories";
 
 function App() {
 
@@ -162,6 +163,7 @@ function App() {
           <Route path="users" element={<ManageUsers />} />
           <Route path="products" element={<ManageProducts />} />
           <Route path="orders" element={<ManageOrders />} />
+          <Route path="categories" element={<ManageCategories />} />
         </Route>
       </Route>
 

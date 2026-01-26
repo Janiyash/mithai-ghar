@@ -29,6 +29,7 @@ export default function AdminLayout() {
           <SidebarLink to="/admin/users" label="Manage Users" />
           <SidebarLink to="/admin/products" label="Manage Products" />
           <SidebarLink to="/admin/orders" label="Manage Orders" />
+          <SidebarLink to="/admin/categories" label="Manage Categories" />
         </nav>
 
         {/* BOTTOM ACTIONS (ALWAYS STUCK) */}
