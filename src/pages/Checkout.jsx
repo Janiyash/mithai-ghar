@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { db } from "../firebase";
 import {
   collection,
-  addDoc,
   serverTimestamp,
   doc,
   runTransaction,
@@ -45,35 +44,47 @@ export default function Checkout() {
       return;
     }
 
-    let docRef;
+    let newOrderId;
 
     try {
       // 🔥 TRANSACTION: ORDER + STOCK DECREASE
+      // All reads MUST come before all writes inside a Firestore transaction
       await runTransaction(db, async (transaction) => {
-        // 1️⃣ CHECK & UPDATE STOCK
-        for (const item of cart) {
-          const productRef = doc(db, "products", item.id);
-          const productSnap = await transaction.get(productRef);
+        // 1️⃣ READ PHASE — read all product docs first
+        const productRefs = cart.map((item) => doc(db, "products", item.id));
+        const productSnaps = await Promise.all(
+          productRefs.map((ref) => transaction.get(ref))
+        );
 
-          if (!productSnap.exists()) {
+        // 2️⃣ VALIDATE STOCK
+        for (let i = 0; i < cart.length; i++) {
+          const snap = productSnaps[i];
+          const item = cart[i];
+
+          if (!snap.exists()) {
             throw new Error("Product does not exist");
           }
 
-          const currentQty = productSnap.data().quantity;
-
+          const currentQty = snap.data().quantity;
           if (currentQty < item.quantity) {
-            throw new Error(
-              `Not enough stock for ${item.name}`
-            );
+            throw new Error(`Not enough stock for ${item.name}`);
           }
+        }
 
-          transaction.update(productRef, {
+        // 3️⃣ WRITE PHASE — update stock and create order (no reads after this)
+        for (let i = 0; i < cart.length; i++) {
+          const snap = productSnaps[i];
+          const item = cart[i];
+          const currentQty = snap.data().quantity;
+          transaction.update(productRefs[i], {
             quantity: currentQty - item.quantity,
           });
         }
 
-        // 2️⃣ CREATE ORDER
-        docRef = await addDoc(collection(db, "orders"), {
+        // Create the new order document using transaction.set()
+        const orderRef = doc(collection(db, "orders"));
+        newOrderId = orderRef.id;
+        transaction.set(orderRef, {
           userId: user.uid,
           email: user.email,
           items: cart,
@@ -121,7 +132,7 @@ export default function Checkout() {
     }
 
     // ✅ SHOW SUCCESS
-    setOrderId(docRef.id);
+    setOrderId(newOrderId);
     setShowSuccess(true);
   };
 
