@@ -101,11 +101,11 @@ export default function Checkout() {
       return;
     }
 
-    // 📧 EMAIL (NON-BLOCKING)
+    // 📧 EMAIL TO ADMIN — using real EmailJS credentials
     try {
       await emailjs.send(
-        "YOUR_SERVICE_ID",
-        "YOUR_TEMPLATE_ID",
+        "service_0uwm4no",
+        "template_smjnibr",
         {
           user_name: form.name,
           phone: form.phone,
@@ -121,10 +121,11 @@ export default function Checkout() {
             timeStyle: "short",
           }),
         },
-        "YOUR_PUBLIC_KEY"
+        "k2xUBiZ_NwUwzlYrj"
       );
+      console.log("✅ Admin email sent");
     } catch (err) {
-      console.error("Email failed:", err);
+      console.error("❌ Email failed:", err);
     }
 
     // ✅ SUCCESS
