@@ -47,43 +47,39 @@ export default function Checkout() {
     let newOrderId;
 
     try {
-      // 🔥 TRANSACTION: ORDER + STOCK DECREASE
-      // All reads MUST come before all writes inside a Firestore transaction
+      // Generate the order doc ref BEFORE the transaction
+      const orderRef = doc(collection(db, "orders"));
+      newOrderId = orderRef.id;
+
       await runTransaction(db, async (transaction) => {
-        // 1️⃣ READ PHASE — read all product docs first
+        // ✅ PHASE 1: ALL READS FIRST
         const productRefs = cart.map((item) => doc(db, "products", item.id));
         const productSnaps = await Promise.all(
           productRefs.map((ref) => transaction.get(ref))
         );
 
-        // 2️⃣ VALIDATE STOCK
+        // ✅ PHASE 2: VALIDATE
         for (let i = 0; i < cart.length; i++) {
           const snap = productSnaps[i];
           const item = cart[i];
-
           if (!snap.exists()) {
-            throw new Error("Product does not exist");
+            throw new Error(`Product "${item.name}" does not exist`);
           }
-
           const currentQty = snap.data().quantity;
           if (currentQty < item.quantity) {
-            throw new Error(`Not enough stock for ${item.name}`);
+            throw new Error(`Not enough stock for "${item.name}"`);
           }
         }
 
-        // 3️⃣ WRITE PHASE — update stock and create order (no reads after this)
+        // ✅ PHASE 3: ALL WRITES LAST
         for (let i = 0; i < cart.length; i++) {
-          const snap = productSnaps[i];
-          const item = cart[i];
-          const currentQty = snap.data().quantity;
+          const currentQty = productSnaps[i].data().quantity;
           transaction.update(productRefs[i], {
-            quantity: currentQty - item.quantity,
+            quantity: currentQty - cart[i].quantity,
           });
         }
 
-        // Create the new order document using transaction.set()
-        const orderRef = doc(collection(db, "orders"));
-        newOrderId = orderRef.id;
+        // Create order using transaction.set() — NOT addDoc()
         transaction.set(orderRef, {
           userId: user.uid,
           email: user.email,
@@ -117,7 +113,7 @@ export default function Checkout() {
           address: form.address,
           delivery_time: form.time,
           items: cart
-            .map(item => `${item.name} x ${item.quantity}`)
+            .map((item) => `${item.name} x ${item.quantity}`)
             .join("\n"),
           total,
           date: new Date().toLocaleString("en-IN", {
@@ -131,12 +127,11 @@ export default function Checkout() {
       console.error("Email failed:", err);
     }
 
-    // ✅ SHOW SUCCESS
+    // ✅ SUCCESS
     setOrderId(newOrderId);
     setShowSuccess(true);
   };
 
-  // ❗ EMPTY CART GUARD
   if ((!cart || cart.length === 0) && !showSuccess) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -147,7 +142,6 @@ export default function Checkout() {
 
   return (
     <>
-      {/* MAIN CHECKOUT */}
       <div className="max-w-6xl mx-auto px-6 py-12 grid md:grid-cols-2 gap-10">
 
         {/* FORM */}
