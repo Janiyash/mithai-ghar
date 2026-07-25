@@ -11,6 +11,9 @@ import {
 } from "firebase/firestore";
 import emailjs from "emailjs-com";
 
+// ✅ Initialize EmailJS with your public key ONCE at module level
+emailjs.init("k2xUBiZ_NwUwzlYrj");
+
 export default function Checkout() {
   const navigate = useNavigate();
   const { cart, clearCart } = useCart();
@@ -47,18 +50,17 @@ export default function Checkout() {
     let newOrderId;
 
     try {
-      // Generate the order doc ref BEFORE the transaction
       const orderRef = doc(collection(db, "orders"));
       newOrderId = orderRef.id;
 
       await runTransaction(db, async (transaction) => {
-        // ✅ PHASE 1: ALL READS FIRST
+        // PHASE 1: ALL READS FIRST
         const productRefs = cart.map((item) => doc(db, "products", item.id));
         const productSnaps = await Promise.all(
           productRefs.map((ref) => transaction.get(ref))
         );
 
-        // ✅ PHASE 2: VALIDATE
+        // PHASE 2: VALIDATE
         for (let i = 0; i < cart.length; i++) {
           const snap = productSnaps[i];
           const item = cart[i];
@@ -71,7 +73,7 @@ export default function Checkout() {
           }
         }
 
-        // ✅ PHASE 3: ALL WRITES LAST
+        // PHASE 3: ALL WRITES LAST
         for (let i = 0; i < cart.length; i++) {
           const currentQty = productSnaps[i].data().quantity;
           transaction.update(productRefs[i], {
@@ -79,7 +81,6 @@ export default function Checkout() {
           });
         }
 
-        // Create order using transaction.set() — NOT addDoc()
         transaction.set(orderRef, {
           userId: user.uid,
           email: user.email,
@@ -101,9 +102,9 @@ export default function Checkout() {
       return;
     }
 
-    // 📧 EMAIL TO ADMIN — using real EmailJS credentials
+    // 📧 SEND EMAIL TO ADMIN
     try {
-      await emailjs.send(
+      const result = await emailjs.send(
         "service_0uwm4no",
         "template_smjnibr",
         {
@@ -115,20 +116,18 @@ export default function Checkout() {
           items: cart
             .map((item) => `${item.name} x ${item.quantity}`)
             .join("\n"),
-          total,
+          total: `${total}`,
           date: new Date().toLocaleString("en-IN", {
             dateStyle: "medium",
             timeStyle: "short",
           }),
-        },
-        "k2xUBiZ_NwUwzlYrj"
+        }
       );
-      console.log("✅ Admin email sent");
+      console.log("✅ Admin email sent:", result.status, result.text);
     } catch (err) {
       console.error("❌ Email failed:", err);
     }
 
-    // ✅ SUCCESS
     setOrderId(newOrderId);
     setShowSuccess(true);
   };
